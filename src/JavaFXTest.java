@@ -14,8 +14,11 @@ import javafx.util.Duration;
 import java.io.File;
 
 public class JavaFXTest extends Application {
-    private Label errorLabel; // Déclaration de errorLabel
-    private Label successLabel; // Déclaration de successLabel
+    private Label errorLabel;
+    private Label successLabel;
+    private ProgressIndicator progressIndicator;
+    private ProgressBar progressBar;
+
     @Override
     public void start(Stage primaryStage) {
         VBox root = new VBox(15);
@@ -41,11 +44,6 @@ public class JavaFXTest extends Application {
         groupNameField.setMaxWidth(300);
         groupNameField.setStyle("-fx-background-color: rgba(255, 255, 255, 0.9); -fx-font-size: 14px; -fx-padding: 10px;");
 
-        Button uploadLogoButton = new Button("Uploader un logo");
-        uploadLogoButton.setStyle("-fx-background-color: #00A8FF; -fx-text-fill: white; -fx-font-size: 14px;");
-        uploadLogoButton.setMaxWidth(150);
-        uploadLogoButton.setPadding(new Insets(10, 20, 10, 20));
-
         ImageView logoPreview = new ImageView();
         logoPreview.setFitHeight(80);
         logoPreview.setFitWidth(80);
@@ -56,25 +54,18 @@ public class JavaFXTest extends Application {
         phoneNumbersArea.setMaxHeight(100);
         phoneNumbersArea.setStyle("-fx-background-color: rgba(255, 255, 255, 0.9); -fx-font-size: 14px; -fx-padding: 10px;");
 
-        Button createGroupButton = new Button("Créer le groupe");
-        createGroupButton.setStyle("-fx-background-color: #128C7E; -fx-text-fill: white; -fx-font-size: 14px;");
-        createGroupButton.setMaxWidth(200);
-        createGroupButton.setPadding(new Insets(10, 20, 10, 20));
+        Button uploadLogoButton = createButton("Uploader un logo", "#00A8FF");
+        Button createGroupButton = createButton("Créer le groupe", "#128C7E");
 
-        Label messageLabel = new Label("Entrez les numéros correctement pour continuer.");
-        messageLabel.setStyle("-fx-text-fill: #000000; -fx-font-size: 12px;");
+        Label messageLabel = createLabel("Entrez les numéros correctement pour continuer.", "#000000", 12, 1);
+        successLabel = createLabel("Groupe créé avec succès !", "#128C7E", 12, 0);
+        errorLabel = createLabel("Numéro invalide détecté", "#FF4D4D", 12, 0);
 
-        Label successLabel = new Label("Groupe créé avec succès !");
-        successLabel.setStyle("-fx-text-fill: #128C7E; -fx-font-size: 12px; -fx-opacity: 0;");
-
-        errorLabel = new Label("Numéro invalide détecté"); // Initialisation de errorLabel
-        errorLabel.setStyle("-fx-text-fill: #FF4D4D; -fx-font-size: 12px; -fx-opacity: 0;");
-
-        ProgressBar progressBar = new ProgressBar(0);
+        progressBar = new ProgressBar(0);
         progressBar.setMaxWidth(300);
         progressBar.setStyle("-fx-accent: #128C7E;");
 
-        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator = new ProgressIndicator();
         progressIndicator.setVisible(false);
 
         FileChooser fileChooser = new FileChooser();
@@ -109,26 +100,7 @@ public class JavaFXTest extends Application {
                 return;
             }
 
-            fadeMessage(successLabel, true);
-            fadeMessage(errorLabel, false);
-            progressIndicator.setVisible(true);
-
-            new Thread(() -> {
-                for (int i = 1; i <= 100; i++) {
-                    double progress = i / 100.0;
-                    try {
-                        Thread.sleep(20);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    final double currentProgress = progress;
-                    progressBar.setProgress(currentProgress);
-
-                    if (i == 100) {
-                        progressIndicator.setVisible(false);
-                    }
-                }
-            }).start();
+            createGroup(groupName, phoneNumbers);
         });
 
         root.getChildren().addAll(
@@ -148,6 +120,42 @@ public class JavaFXTest extends Application {
         primaryStage.setTitle("Écran de création de groupe");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private Label createLabel(String text, String color, int fontSize, double opacity) {
+        Label label = new Label(text);
+        label.setStyle(String.format("-fx-text-fill: %s; -fx-font-size: %dpx; -fx-opacity: %.1f;", color, fontSize, opacity));
+        return label;
+    }
+
+    private Button createButton(String text, String backgroundColor) {
+        Button button = new Button(text);
+        button.setStyle(String.format("-fx-background-color: %s; -fx-text-fill: white; -fx-font-size: 14px;", backgroundColor));
+        button.setPadding(new Insets(10, 20, 10, 20));
+        return button;
+    }
+
+    private void createGroup(String groupName, String phoneNumbers) {
+        fadeMessage(successLabel, true);
+        fadeMessage(errorLabel, false);
+        progressIndicator.setVisible(true);
+
+        new Thread(() -> {
+            for (int i = 1; i <= 100; i++) {
+                double progress = i / 100.0;
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                final double currentProgress = progress;
+                progressBar.setProgress(currentProgress);
+
+                if (i == 100) {
+                    progressIndicator.setVisible(false);
+                }
+            }
+        }).start();
     }
 
     private boolean validatePhoneNumbers(String phoneNumbers) {
