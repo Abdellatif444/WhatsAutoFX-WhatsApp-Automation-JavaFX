@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -11,13 +12,17 @@ import javafx.stage.Stage;
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class JavaFXTest extends Application {
     private Label errorLabel;
     private Label successLabel;
     private ProgressIndicator progressIndicator;
     private ProgressBar progressBar;
+    private ImageView logoPreview;
 
     @Override
     public void start(Stage primaryStage) {
@@ -44,7 +49,7 @@ public class JavaFXTest extends Application {
         groupNameField.setMaxWidth(300);
         groupNameField.setStyle("-fx-background-color: rgba(255, 255, 255, 0.9); -fx-font-size: 14px; -fx-padding: 10px;");
 
-        ImageView logoPreview = new ImageView();
+        logoPreview = new ImageView();
         logoPreview.setFitHeight(80);
         logoPreview.setFitWidth(80);
 
@@ -135,6 +140,25 @@ public class JavaFXTest extends Application {
         return button;
     }
 
+    private void showSummary(String groupName, String phoneNumbers, Image logo) {
+        int numberOfContacts = phoneNumbers.split("[,\\s]+").length;
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Récapitulatif de la création du groupe");
+        alert.setHeaderText("Groupe créé avec succès !");
+        alert.setContentText(
+            "Nom du groupe : " + groupName + "\n" +
+            "Nombre de numéros ajoutés : " + numberOfContacts
+        );
+
+        // Ajouter l'aperçu du logo dans l'alerte
+        ImageView logoView = new ImageView(logo);
+        logoView.setFitWidth(100);
+        logoView.setFitHeight(100);
+        alert.setGraphic(logoView);
+
+        alert.showAndWait();
+    }
+
     private void createGroup(String groupName, String phoneNumbers) {
         fadeMessage(successLabel, true);
         fadeMessage(errorLabel, false);
@@ -149,10 +173,18 @@ public class JavaFXTest extends Application {
                     e.printStackTrace();
                 }
                 final double currentProgress = progress;
-                progressBar.setProgress(currentProgress);
+                Platform.runLater(() -> progressBar.setProgress(currentProgress));
 
                 if (i == 100) {
-                    progressIndicator.setVisible(false);
+                    Platform.runLater(() -> {
+                        progressIndicator.setVisible(false);
+
+                        // Afficher le récapitulatif après la fin de la progression
+                        showSummary(groupName, phoneNumbers, logoPreview.getImage());
+
+                        // Sauvegarder les informations du groupe
+                        saveGroupInfo(groupName, phoneNumbers);
+                    });
                 }
             }
         }).start();
@@ -166,6 +198,16 @@ public class JavaFXTest extends Application {
             }
         }
         return true;
+    }
+
+    private void saveGroupInfo(String groupName, String phoneNumbers) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("C:\\Users\\Admin\\eclipse-workspace\\JavaFXTestProject\\groupe_info.txt", true))) {
+            writer.write("Nom du groupe : " + groupName + "\n");
+            writer.write("Numéros : " + phoneNumbers + "\n\n");
+            writer.write("-------------------------------\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showError(String message) {
